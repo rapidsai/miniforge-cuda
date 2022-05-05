@@ -1,0 +1,61 @@
+name: build and publish imgs workflow
+
+on:
+  workflow_call:
+    inputs:
+      push:
+        required: true
+        type: boolean
+    # secrets:
+    #   DOCKERHUB_USERNAME:
+    #     required: true
+    #   DOCKERHUB_TOKEN:
+    #     required: true
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        CUDA_VER:
+          - "11.5.1"
+          - "11.4.1"
+          - "11.2.2"
+          - "11.0.3"
+        PY_VER:
+          - "3.8"
+          - "3.9"
+        IMG_TYPE:
+          - "base"
+          - "runtime"
+          - "devel"
+        LINUX_VER:
+          - "ubuntu18.04"
+          - "ubuntu20.04"
+          - "centos7"
+          - "centos8"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      # - name: Login to DockerHub
+      #   uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: ${{ matrix.CUDA_VER >= '11.2.2' && matrix.LINUX_VER != 'centos7' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ inputs.push }}
+          pull: true
+          build-args: |
+            CUDA_VER=${{ matrix.CUDA_VER }}
+            IMG_TYPE=${{ matrix.IMG_TYPE }}
+            LINUX_VER=${{ matrix.LINUX_VER }}
+            PY_VER=${{ matrix.PY_VER }}
+          tags: rapidsai/miniconda-cuda:${{ matrix.CUDA_VER }}-${{ matrix.IMG_TYPE }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
