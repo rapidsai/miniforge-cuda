@@ -1,0 +1,12 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build-images:
+    uses: ./.github/workflows/build-and-publish-images.yml
+    with:
+      push: true
