@@ -14,6 +14,7 @@ RUN \
   echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> ~/.bashrc; \
   # install expected Python version
   mamba install -y python="${PY_VER}"; \
+  mamba update --all -y; \
   find /opt/conda -follow -type f -name '*.a' -delete; \
   find /opt/conda -follow -type f -name '*.pyc' -delete; \
   conda clean -afy
