@@ -46,6 +46,7 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
       - name: Build and push
+        timeout-minutes: 10
         uses: docker/build-push-action@v3
         with:
           context: .
