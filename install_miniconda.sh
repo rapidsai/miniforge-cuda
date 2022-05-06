@@ -3,8 +3,13 @@ set -e
 ARCH=$(uname -p)
 
 if [[ "$LINUX_VER" == *ubuntu* ]]; then
-  apt-key adv \
-    --fetch-keys "https://developer.download.nvidia.com/compute/cuda/repos/${LINUX_VER/./}/${ARCH}/3bf863cc.pub"
+  # simple retry loop since this cmd is flaky
+  for i in $(seq 1 5); do
+    apt-key adv \
+      --fetch-keys "https://developer.download.nvidia.com/compute/cuda/repos/${LINUX_VER/./}/${ARCH}/3bf863cc.pub" \
+    && EXIT_CODE=0 && break || EXIT_CODE=$? && sleep 5;
+  done
+  (exit $EXIT_CODE)
   apt-get update && apt-get install -y \
     wget
   rm -rf /var/lib/apt/lists/*
