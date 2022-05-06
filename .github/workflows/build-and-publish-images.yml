@@ -57,4 +57,4 @@ jobs:
             IMG_TYPE=${{ matrix.IMG_TYPE }}
             LINUX_VER=${{ matrix.LINUX_VER }}
             PY_VER=${{ matrix.PY_VER }}
-          tags: rapidsai/miniconda-cuda:${{ matrix.CUDA_VER }}-${{ matrix.IMG_TYPE }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
+          tags: rapidsai/mambaforge-cuda:${{ matrix.CUDA_VER }}-${{ matrix.IMG_TYPE }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
