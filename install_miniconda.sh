@@ -31,6 +31,7 @@ bash miniconda.sh -b -p /opt/conda
 rm miniconda.sh
 . /opt/conda/etc/profile.d/conda.sh
 conda activate base
+conda install -y -c conda-forge conda "mamba>=0.23.0" # ensure the latest conda & mamba are installed
 # the following lines were copied from miniconda's own images
 /opt/conda/bin/conda clean -afy
 find /opt/conda/ -follow -type f -name '*.a' -delete
