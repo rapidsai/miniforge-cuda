@@ -23,10 +23,6 @@ jobs:
         PY_VER:
           - "3.8"
           - "3.9"
-        IMG_TYPE:
-          - "base"
-          - "runtime"
-          - "devel"
         LINUX_VER:
           - "ubuntu18.04"
           - "ubuntu20.04"
@@ -55,7 +51,6 @@ jobs:
           pull: true
           build-args: |
             CUDA_VER=${{ matrix.CUDA_VER }}
-            IMG_TYPE=${{ matrix.IMG_TYPE }}
             LINUX_VER=${{ matrix.LINUX_VER }}
             PY_VER=${{ matrix.PY_VER }}
-          tags: rapidsai/mambaforge-cuda:${{ matrix.CUDA_VER }}-${{ matrix.IMG_TYPE }}-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}
+          tags: rapidsai/mambaforge-cuda:${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PY_VER }}

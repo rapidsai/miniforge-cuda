@@ -1,7 +1,6 @@
 ARG CUDA_VER=11.4.0
-ARG IMG_TYPE=base
 ARG LINUX_VER=ubuntu18.04
-FROM nvidia/cuda:${CUDA_VER}-${IMG_TYPE}-${LINUX_VER}
+FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 
 ARG PY_VER=3.9
 ENV PATH=/opt/conda/bin:$PATH
