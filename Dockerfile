@@ -5,7 +5,7 @@ FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 ARG PY_VER=3.9
 ENV PATH=/opt/conda/bin:$PATH
 
-COPY --from=condaforge/mambaforge:4.12.0-0 /opt/conda /opt/conda
+COPY --from=condaforge/mambaforge:4.13.0-1 /opt/conda /opt/conda
 RUN \
   # ensure conda environment is always activated
   ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh; \
