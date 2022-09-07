@@ -4,6 +4,7 @@ FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 
 ARG PYTHON_VER=3.9
 ENV PATH=/opt/conda/bin:$PATH
+ENV PYTHON_VERSION=${PYTHON_VER}
 
 COPY --from=condaforge/mambaforge:4.13.0-1 /opt/conda /opt/conda
 RUN \
@@ -12,7 +13,7 @@ RUN \
   echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> /etc/skel/.bashrc; \
   echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> ~/.bashrc; \
   # install expected Python version
-  mamba install -y python="${PYTHON_VER}"; \
+  mamba install -y python="${PYTHON_VERSION}"; \
   mamba update --all -y; \
   find /opt/conda -follow -type f -name '*.a' -delete; \
   find /opt/conda -follow -type f -name '*.pyc' -delete; \
