@@ -70,7 +70,7 @@ jobs:
             "${{ needs.compute-matrix.outputs.LATEST_CUDA_VER }}" == "${{ matrix.CUDA_VER }}" &&
             "${{ needs.compute-matrix.outputs.LATEST_PYTHON_VER }}" == "${{ matrix.PYTHON_VER }}"
           ]]; then
-            TAGS+=",latest"
+            TAGS+=",rapidsai/mambaforge-cuda:latest"
           fi
           echo "::set-output name=TAGS::${TAGS}"
       - name: Compute Platforms
