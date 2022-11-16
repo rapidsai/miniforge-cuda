@@ -4,6 +4,7 @@ FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 
 ARG LINUX_VER
 ARG PYTHON_VER=3.9
+ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
 
