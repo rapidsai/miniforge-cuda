@@ -63,16 +63,24 @@ jobs:
         id: compute-tags
         run: |
           set -x
-          TAGS="rapidsai/mambaforge-cuda:cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
+          BASE_NAME="rapidsai/mambaforge-cuda"
+          RAPIDS_NAME="${BASE_NAME}-rapids"
+
+          CURRENT_TAG="cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
+
+          BASE_TAGS="${BASE_NAME}:${CURRENT_TAG}"
+          RAPIDS_TAGS="${RAPIDS_NAME}:${CURRENT_TAG}"
 
           if [[
             "${{ needs.compute-matrix.outputs.LATEST_UBUNTU_VER }}" == "${{ matrix.LINUX_VER }}" &&
             "${{ needs.compute-matrix.outputs.LATEST_CUDA_VER }}" == "${{ matrix.CUDA_VER }}" &&
             "${{ needs.compute-matrix.outputs.LATEST_PYTHON_VER }}" == "${{ matrix.PYTHON_VER }}"
           ]]; then
-            TAGS+=",rapidsai/mambaforge-cuda:latest"
+            BASE_TAGS+=",${BASE_NAME}:latest"
+            RAPIDS_TAGS+=",${RAPIDS_NAME}:latest"
           fi
-          echo "TAGS=${TAGS}" >> ${GITHUB_OUTPUT}
+          echo "BASE_TAGS=${BASE_TAGS}" >> ${GITHUB_OUTPUT}
+          echo "RAPIDS_TAGS=${RAPIDS_TAGS}" >> ${GITHUB_OUTPUT}
       - name: Compute Platforms
         id: compute-platforms
         run: |
@@ -86,7 +94,7 @@ jobs:
             PLATFORMS+=",linux/arm64"
           fi
           echo "PLATFORMS=${PLATFORMS}" >> ${GITHUB_OUTPUT}
-      - name: Build and push
+      - name: Build and push mambaforge-cuda
         timeout-minutes: 10
         uses: docker/build-push-action@v3
         with:
@@ -94,8 +102,23 @@ jobs:
           platforms: ${{ steps.compute-platforms.outputs.PLATFORMS }}
           push: ${{ inputs.push }}
           pull: true
+          target: mambaforge-cuda
           build-args: |
             CUDA_VER=${{ matrix.CUDA_VER }}
             LINUX_VER=${{ matrix.LINUX_VER }}
             PYTHON_VER=${{ matrix.PYTHON_VER }}
-          tags: ${{ steps.compute-tags.outputs.TAGS }}
+          tags: ${{ steps.compute-tags.outputs.BASE_TAGS }}
+      - name: Build and push mambaforge-cuda-rapids
+        timeout-minutes: 10
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: ${{ steps.compute-platforms.outputs.PLATFORMS }}
+          push: ${{ inputs.push }}
+          pull: true
+          target: mambaforge-cuda-rapids
+          build-args: |
+            CUDA_VER=${{ matrix.CUDA_VER }}
+            LINUX_VER=${{ matrix.LINUX_VER }}
+            PYTHON_VER=${{ matrix.PYTHON_VER }}
+          tags: ${{ steps.compute-tags.outputs.RAPIDS_TAGS }}
