@@ -31,10 +31,15 @@ RUN \
       && apt-get install -y --no-install-recommends \
         # needed by the ORC library used by pyarrow, because it provides /etc/localtime
         tzdata \
+        # needed by dask
+        libnuma1 libnuma-dev \
       && rm -rf "/var/lib/apt/lists/*"; \
       ;; \
     "centos"* | "rockylinux"*) \
       yum -y update \
+      && yum -y install --setopt=install_weak_deps=False \
+        # needed by dask
+        numactl-devel numactl-libs \
       && yum clean all; \
       ;; \
     *) \
