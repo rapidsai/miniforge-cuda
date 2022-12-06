@@ -8,7 +8,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
 
-COPY --from=condaforge/mambaforge:22.9.0-1 /opt/conda /opt/conda
+COPY --from=condaforge/mambaforge:22.9.0-2 /opt/conda /opt/conda
 RUN \
   # ensure conda environment is always activated
   ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh; \
@@ -25,11 +25,19 @@ RUN \
       apt-get update \
       && apt-get upgrade -y \
       && apt-get install -y --no-install-recommends \
+        # needed by the ORC library used by pyarrow, because it provides /etc/localtime
         tzdata \
+        # needed by dask/ucx
+        # TODO: remove these packages once they're available on conda
+        libnuma1 libnuma-dev \
       && rm -rf "/var/lib/apt/lists/*"; \
       ;; \
     "centos"* | "rockylinux"*) \
       yum -y update \
+      && yum -y install --setopt=install_weak_deps=False \
+        # needed by dask/ucx
+        # TODO: remove these packages once they're available on conda
+        numactl-devel numactl-libs \
       && yum clean all; \
       ;; \
     *) \
