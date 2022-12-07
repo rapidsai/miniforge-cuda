@@ -1,4 +1,5 @@
 CUDA_VER:
+  - "11.8.0"
   - "11.5.1"
   - "11.4.1"
   - "11.2.2"
@@ -10,3 +11,10 @@ LINUX_VER:
   - "ubuntu22.04"
   - "centos7"
   - "rockylinux8"
+exclude:
+  - LINUX_VER: "ubuntu22.04"
+    CUDA_VER: "11.2.2"
+  - LINUX_VER: "ubuntu22.04"
+    CUDA_VER: "11.4.1"
+  - LINUX_VER: "ubuntu22.04"
+    CUDA_VER: "11.5.1"
