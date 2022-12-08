@@ -14,7 +14,10 @@ write_platforms() {
   echo "PLATFORMS=${PLATFORMS}" | tee --append "${GITHUB_OUTPUT:-/dev/null}"
 }
 
-if  [[
+# Ubuntu18.04 images don't officially support arm.
+# Even though Ubuntu18.04 images prior to CUDA 11.8.0 did
+# have arm variants, it was removed for 11.8.0.
+if [[
   "${CUDA_VER}" == "11.8.0" &&
   "${LINUX_VER}" == "ubuntu18.04"
 ]]; then
