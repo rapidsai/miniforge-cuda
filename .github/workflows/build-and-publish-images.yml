@@ -81,7 +81,7 @@ jobs:
           LINUX_VER: ${{ matrix.LINUX_VER }}
       - name: Build and push
         timeout-minutes: 10
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           platforms: ${{ steps.compute-platforms.outputs.PLATFORMS }}
