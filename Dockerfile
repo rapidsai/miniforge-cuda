@@ -1,5 +1,5 @@
 ARG CUDA_VER=11.4.0
-ARG LINUX_VER=ubuntu18.04
+ARG LINUX_VER=ubuntu20.04
 FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 
 ARG LINUX_VER
