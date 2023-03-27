@@ -8,19 +8,27 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
 
-COPY --from=condaforge/mambaforge:22.9.0-2 --chmod=777 /opt/conda /opt/conda
+RUN useradd -rm -d /home/rapids -s /bin/bash -g root -u 1001 rapids
+
+COPY --from=condaforge/mambaforge:22.9.0-2 --chown=rapids /opt/conda /opt/conda
+
+USER rapids
+
+RUN \
+  # install expected Python version
+  mamba install -y -n base python="${PYTHON_VERSION}"; \
+  mamba update --all -y -n base; \
+  find /opt/conda -follow -type f -name '*.a' -delete; \
+  find /opt/conda -follow -type f -name '*.pyc' -delete; \
+  conda clean -afy;
+
+USER root
+
 RUN \
   # ensure conda environment is always activated
   ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh; \
   echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> /etc/skel/.bashrc; \
   echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> ~/.bashrc; \
-  # install expected Python version
-  mamba install -y python="${PYTHON_VERSION}"; \
-  mamba update --all -y; \
-  find /opt/conda -follow -type f -name '*.a' -delete; \
-  find /opt/conda -follow -type f -name '*.pyc' -delete; \
-  conda clean -afy; \
-  chmod 777 -R /opt/conda/; \
   case "${LINUX_VER}" in \
     "ubuntu"*) \
       apt-get update \
