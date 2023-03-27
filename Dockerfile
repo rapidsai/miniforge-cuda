@@ -8,7 +8,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
 
-COPY --from=condaforge/mambaforge:22.9.0-2 /opt/conda /opt/conda
+COPY --from=condaforge/mambaforge:22.9.0-2 --chmod=777 /opt/conda /opt/conda
 RUN \
   # ensure conda environment is always activated
   ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh; \
@@ -20,6 +20,7 @@ RUN \
   find /opt/conda -follow -type f -name '*.a' -delete; \
   find /opt/conda -follow -type f -name '*.pyc' -delete; \
   conda clean -afy; \
+  chmod 777 -R /opt/conda/; \
   case "${LINUX_VER}" in \
     "ubuntu"*) \
       apt-get update \
