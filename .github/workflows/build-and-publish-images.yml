@@ -73,7 +73,7 @@ jobs:
       - name: Create multiarch manifest
         run: |
           LATEST_CUDA_VER=$(yq '.CUDA_VER | sort | .[-1]' axis.yaml)
-          LATEST_PYTHON_VER=$(yq '.PYTHON_VER | sort | .[-1]' axis.yaml)
+          LATEST_PYTHON_VER=$(yq -o json '.PYTHON_VER' axis.yaml | jq -r 'max_by(split(".") | map(tonumber))')
           LATEST_UBUNTU_VER=$(yq '.LINUX_VER | map(select(. == "*ubuntu*")) | sort | .[-1]' axis.yaml)
 
           source_tags=()
@@ -116,5 +116,5 @@ jobs:
             curl -i -X DELETE \
               -H "Accept: application/json" \
               -H "Authorization: JWT $HUB_TOKEN" \
-              https://hub.docker.com/v2/repositories/$org/$repo/tags/$tag-$arch/
+              "https://hub.docker.com/v2/repositories/$org/$repo/tags/$tag-$arch/"
           done
