@@ -3,9 +3,9 @@ name: build and publish imgs workflow
 on:
   workflow_call:
     inputs:
-      push:
+      build_type:
         required: true
-        type: boolean
+        type: string
 
 defaults:
   run:
@@ -15,80 +15,106 @@ jobs:
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
-      LATEST_UBUNTU_VER: ${{ steps.latest-values.outputs.LATEST_UBUNTU_VER }}
-      LATEST_CUDA_VER: ${{ steps.latest-values.outputs.LATEST_CUDA_VER }}
-      LATEST_PYTHON_VER: ${{ steps.latest-values.outputs.LATEST_PYTHON_VER }}
+      IMAGE_REPO: ${{ steps.compute-image-repo.outputs.IMAGE_REPO }}
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+      TAG_PREFIX: ${{ steps.compute-tag-prefix.outputs.TAG_PREFIX }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Compute latest values
-        id: latest-values
-        run: |
-          set -x
-          LATEST_UBUNTU_VER=$(yq '.LINUX_VER | map(select(. == "*ubuntu*")) | sort | .[-1]' axis.yaml)
-          LATEST_CUDA_VER=$(yq '.CUDA_VER | sort | .[-1]' axis.yaml)
-          LATEST_PYTHON_VER=$(yq '.PYTHON_VER | sort | .[-1]' axis.yaml)
-
-          echo "LATEST_UBUNTU_VER=${LATEST_UBUNTU_VER}" >> ${GITHUB_OUTPUT}
-          echo "LATEST_CUDA_VER=${LATEST_CUDA_VER}" >> ${GITHUB_OUTPUT}
-          echo "LATEST_PYTHON_VER=${LATEST_PYTHON_VER}" >> ${GITHUB_OUTPUT}
       - name: Compute matrix
         id: compute-matrix
         run: |
-          MATRIX=$(yq -o json '.' axis.yaml | jq -c)
-          echo "MATRIX=${MATRIX}" >> ${GITHUB_OUTPUT}
+          MATRIX=$(ci/compute-mx.sh)
+          echo "MATRIX=${MATRIX}" | tee -a ${GITHUB_OUTPUT}
+      - name: Compute tag prefix
+        id: compute-tag-prefix
+        run: |
+          TAG_PREFIX=""
+          if [ "${{ inputs.build_type }}" = "pull-request" ]; then
+            pr_num="${GITHUB_REF_NAME##*/}"
+            TAG_PREFIX="mambaforge-cuda-${pr_num}-"
+          fi
+          echo "TAG_PREFIX=${TAG_PREFIX}" | tee -a ${GITHUB_OUTPUT}
+      - name: Compute image repo
+        id: compute-image-repo
+        run: |
+          repo="mambaforge-cuda"
+          if [ "${{ inputs.build_type }}" = "pull-request" ]; then
+            repo="staging"
+          fi
+          echo "IMAGE_REPO=${repo}" | tee -a ${GITHUB_OUTPUT}
   docker:
     needs: compute-matrix
-    runs-on: ubuntu-latest
-    env:
-      DOCKERHUB_USERNAME: ${{ secrets.GPUCIBOT_DOCKERHUB_USER }}
-      DOCKERHUB_TOKEN: ${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+      fail-fast: false
+    secrets: inherit
+    uses: ./.github/workflows/build-image.yml
+    with:
+      ARCHES: ${{ toJSON(matrix.ARCHES) }}
+      CUDA_VER: ${{ matrix.CUDA_VER }}
+      LINUX_VER: ${{ matrix.LINUX_VER }}
+      PYTHON_VER: ${{ matrix.PYTHON_VER }}
+      TAG: rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:${{ needs.compute-matrix.outputs.TAG_PREFIX }}cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}
+  build-multiarch-manifest:
+    if: inputs.build_type == 'branch'
+    needs: [docker, compute-matrix]
+    strategy:
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - if: ${{ env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != '' }}
-        name: Login to DockerHub
+      - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ env.DOCKERHUB_TOKEN }}
-      - name: Compute Tags
-        id: compute-tags
+          username: ${{ secrets.GPUCIBOT_DOCKERHUB_USER }}
+          password: ${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}
+      - name: Create multiarch manifest
         run: |
-          set -x
-          TAGS="rapidsai/mambaforge-cuda:cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
+          LATEST_CUDA_VER=$(yq '.CUDA_VER | sort | .[-1]' axis.yaml)
+          LATEST_PYTHON_VER=$(yq -o json '.PYTHON_VER' axis.yaml | jq -r 'max_by(split(".") | map(tonumber))')
+          LATEST_UBUNTU_VER=$(yq '.LINUX_VER | map(select(. == "*ubuntu*")) | sort | .[-1]' axis.yaml)
 
+          source_tags=()
+          tag="rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:${{ needs.compute-matrix.outputs.TAG_PREFIX }}cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
+          for arch in $(echo '${{ toJSON(matrix.ARCHES) }}' | jq .[] -r); do
+            source_tags+=("${tag}-${arch}")
+          done
+
+          docker manifest create ${tag} ${source_tags[@]}
+          docker manifest push ${tag}
           if [[
-            "${{ needs.compute-matrix.outputs.LATEST_UBUNTU_VER }}" == "${{ matrix.LINUX_VER }}" &&
-            "${{ needs.compute-matrix.outputs.LATEST_CUDA_VER }}" == "${{ matrix.CUDA_VER }}" &&
-            "${{ needs.compute-matrix.outputs.LATEST_PYTHON_VER }}" == "${{ matrix.PYTHON_VER }}"
+            "${LATEST_UBUNTU_VER}" == "${{ matrix.LINUX_VER }}" &&
+            "${LATEST_CUDA_VER}" == "${{ matrix.CUDA_VER }}" &&
+            "${LATEST_PYTHON_VER}" == "${{ matrix.PYTHON_VER }}"
           ]]; then
-            TAGS+=",rapidsai/mambaforge-cuda:latest"
+            docker manifest create rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:latest ${source_tags[@]}
+            docker manifest push rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:latest
           fi
-          echo "TAGS=${TAGS}" >> ${GITHUB_OUTPUT}
-      - name: Compute Platforms
-        id: compute-platforms
-        run: ./ci/compute-arch.sh
-        env:
-          CUDA_VER: ${{ matrix.CUDA_VER }}
-          LINUX_VER: ${{ matrix.LINUX_VER }}
-      - name: Build and push
-        timeout-minutes: 10
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{ steps.compute-platforms.outputs.PLATFORMS }}
-          push: ${{ inputs.push }}
-          pull: true
-          build-args: |
-            CUDA_VER=${{ matrix.CUDA_VER }}
-            LINUX_VER=${{ matrix.LINUX_VER }}
-            PYTHON_VER=${{ matrix.PYTHON_VER }}
-          tags: ${{ steps.compute-tags.outputs.TAGS }}
+  delete-temp-images:
+    if: always()
+    needs: [compute-matrix, build-multiarch-manifest]
+    strategy:
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove temporary images
+        run: |
+          HUB_TOKEN=$(
+            curl -s -H "Content-Type: application/json" \
+              -X POST \
+              -d "{\"username\": \"${{ secrets.GPUCIBOT_DOCKERHUB_USER }}\", \"password\": \"${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}\"}" \
+              https://hub.docker.com/v2/users/login/ | jq -r .token \
+          )
+
+          org="rapidsai"
+          repo="${{ needs.compute-matrix.outputs.IMAGE_REPO }}"
+          tag="${{ needs.compute-matrix.outputs.TAG_PREFIX }}cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
+
+          for arch in $(echo '${{ toJSON(matrix.ARCHES) }}' | jq .[] -r); do
+            curl -i -X DELETE \
+              -H "Accept: application/json" \
+              -H "Authorization: JWT $HUB_TOKEN" \
+              "https://hub.docker.com/v2/repositories/$org/$repo/tags/$tag-$arch/"
+          done
