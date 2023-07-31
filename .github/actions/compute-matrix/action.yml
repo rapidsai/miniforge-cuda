@@ -1,0 +1,44 @@
+name: 'Compute Matrix Action'
+description: 'Computes matrix, tag prefix, and image repository'
+inputs:
+  build_type:
+    description: 'Build type'
+    required: true
+outputs:
+  MATRIX: 
+    description: "Computed matrix"
+    value: ${{ steps.compute-matrix.outputs.MATRIX }}
+  TAG_PREFIX:
+    description: "Computed tag prefix"
+    value: ${{ steps.tag-prefix.outputs.TAG_PREFIX }}
+  IMAGE_REPO: 
+    description: "Computed image repository"
+    value: ${{ steps.image-repo.outputs.IMAGE_REPO }}
+runs:
+  using: "composite"
+  steps:
+    - name: Compute matrix
+      id: compute-matrix
+      run: |
+        MATRIX=$(ci/compute-mx.sh)
+        echo "MATRIX=${MATRIX}" | tee -a ${GITHUB_OUTPUT}
+      shell: bash
+    - name: Compute tag prefix
+      id: tag-prefix
+      run: |
+        TAG_PREFIX=""
+        if [ "${{ inputs.build_type }}" = "pull-request" ]; then
+          pr_num="${GITHUB_REF_NAME##*/}"
+          TAG_PREFIX="mambaforge-cuda-${pr_num}-"
+        fi
+        echo "TAG_PREFIX=${TAG_PREFIX}" | tee -a ${GITHUB_OUTPUT}
+      shell: bash
+    - name: Compute image repo
+      id: image-repo
+      run: |
+        repo="mambaforge-cuda"
+        if [ "${{ inputs.build_type }}" = "pull-request" ]; then
+          repo="staging"
+        fi
+        echo "IMAGE_REPO=${repo}" | tee -a ${GITHUB_OUTPUT}
+      shell: bash
