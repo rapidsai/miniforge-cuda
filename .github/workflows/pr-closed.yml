@@ -1,0 +1,29 @@
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  compute-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      IMAGE_REPO: ${{ steps.compute-matrix.outputs.IMAGE_REPO }}
+      MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
+      TAG_PREFIX: ${{ steps.compute-matrix.outputs.TAG_PREFIX }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Compute Matrix Action
+        id: compute-matrix
+        uses: ./.github/actions/compute-matrix
+        with:
+          build_type: "pull-request"
+  delete-imgs:
+    needs: compute-matrix
+    strategy:
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
+    uses: ./.github/workflows/delete-temp-images.yml
+    with:
+      ARCHES: ${{ toJSON(matrix.ARCHES) }}
+      CUDA_VER: ${{ matrix.CUDA_VER }}
+      IMAGE_REPO: ${{ needs.compute-matrix.outputs.IMAGE_REPO }}
+      LINUX_VER: ${{ matrix.LINUX_VER }}
+      PYTHON_VER: ${{ matrix.PYTHON_VER }}
+      TAG_PREFIX: ${{ needs.compute-matrix.outputs.TAG_PREFIX }}

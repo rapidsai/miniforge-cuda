@@ -1,0 +1,65 @@
+name: Delete temporary images
+
+on:
+  workflow_call:
+    inputs:
+      CUDA_VER:
+        required: true
+        type: string
+      LINUX_VER:
+        required: true
+        type: string
+      PYTHON_VER:
+        required: true
+        type: string
+      IMAGE_REPO:
+        required: true
+        type: string
+      TAG_PREFIX:
+        required: true
+        type: string
+      ARCHES:
+        required: true
+        type: string
+
+jobs:
+  delete-temp-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Remove temporary images
+        run: |
+          echo testing!
+          done
+    strategy:
+      matrix:
+        ARCH: ${{ fromJSON(inputs.ARCHES) }}
+        CUDA_VER: ["${{ inputs.CUDA_VER }}"]
+        LINUX_VER: ["${{ inputs.LINUX_VER }}"]
+        PYTHON_VER: ["${{ inputs.PYTHON_VER }}"]
+        IMAGE_REPO: ${{ inputs.IMAGE_REPO }}
+        TAG_PREFIX: ${{ inputs.TAG_PREFIX }}
+      fail-fast: false
+    # if: always()
+    # runs-on: ubuntu-latest
+    # steps:
+    #   - name: Remove temporary images
+    #     run: |
+    #       HUB_TOKEN=$(
+    #       curl -s -H "Content-Type: application/json" \
+    #           -X POST \
+    #           -d "{\"username\": \"${{ secrets.GPUCIBOT_DOCKERHUB_USER }}\", \"password\": \"${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}\"}" \
+    #           https://hub.docker.com/v2/users/login/ | jq -r .token \
+    #       )
+
+    #       org="rapidsai"
+    #       repo="${{ inputs.IMAGE_REPO }}"
+    #       tag="${{ inputs.TAG_PREFIX }}cuda${{ inputs.CUDA_VER }}-base-${{ inputs.LINUX_VER }}-py${{ inputs.PYTHON_VER }}"
+
+    #       for arch in $(echo '${{ inputs.ARCHES }}' | jq .[] -r); do
+    #       curl -i -X DELETE \
+    #           -H "Accept: application/json" \
+    #           -H "Authorization: JWT $HUB_TOKEN" \
+    #           "https://hub.docker.com/v2/repositories/$org/$repo/tags/$tag-$arch/"
+    #       done
