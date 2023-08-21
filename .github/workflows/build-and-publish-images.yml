@@ -15,18 +15,19 @@ jobs:
   compute-matrix:
     runs-on: ubuntu-latest
     outputs:
-      IMAGE_REPO: ${{ steps.compute-matrix.outputs.IMAGE_REPO }}
       MATRIX: ${{ steps.compute-matrix.outputs.MATRIX }}
-      TAG_PREFIX: ${{ steps.compute-matrix.outputs.TAG_PREFIX }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Compute Matrix
+      - name: Compute matrix
         id: compute-matrix
-        uses: ./.github/actions/compute-matrix
-        with:
-          build_type: ${{ inputs.build_type }}
+        run: |
+          MATRIX=$(ci/compute-matrix.sh)
+          echo "MATRIX=${MATRIX}" | tee -a ${GITHUB_OUTPUT}
+        env:
+          BUILD_TYPE: ${{ inputs.BUILD_TYPE }}
   docker:
+    name: docker
     needs: compute-matrix
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
@@ -38,9 +39,11 @@ jobs:
       CUDA_VER: ${{ matrix.CUDA_VER }}
       LINUX_VER: ${{ matrix.LINUX_VER }}
       PYTHON_VER: ${{ matrix.PYTHON_VER }}
-      TAG: rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:${{ needs.compute-matrix.outputs.TAG_PREFIX }}cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}
+      IMAGE_REPO: ${{ matrix.IMAGE_REPO }}
+      IMAGE_NAME: ${{ matrix.IMAGE_NAME }}
+
   build-multiarch-manifest:
-    if: inputs.build_type == 'branch'
+    name: manifest (${{ matrix.CUDA_VER }}, ${{ matrix.PYTHON_VER }}, ${{ matrix.LINUX_VER }}, ${{ matrix.IMAGE_REPO }})
     needs: [docker, compute-matrix]
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
@@ -54,38 +57,29 @@ jobs:
           username: ${{ secrets.GPUCIBOT_DOCKERHUB_USER }}
           password: ${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}
       - name: Create multiarch manifest
-        run: |
-          LATEST_CUDA_VER=$(yq '.CUDA_VER | sort | .[-1]' axis.yaml)
-          LATEST_PYTHON_VER=$(yq -o json '.PYTHON_VER' axis.yaml | jq -r 'max_by(split(".") | map(tonumber))')
-          LATEST_UBUNTU_VER=$(yq '.LINUX_VER | map(select(. == "*ubuntu*")) | sort | .[-1]' axis.yaml)
+        env:
+          ARCHES: ${{ toJSON(matrix.ARCHES) }}
+          CUDA_VER: ${{ matrix.CUDA_VER }}
+          LINUX_VER: ${{ matrix.LINUX_VER }}
+          PYTHON_VER: ${{ matrix.PYTHON_VER }}
+          IMAGE_REPO: ${{ matrix.IMAGE_REPO }}
+          BUILD_TYPE: ${{ inputs.build_type }}
+          IMAGE_NAME: ${{ matrix.IMAGE_NAME }}
+        run: ci/create-multiarch-manifest.sh
 
-          source_tags=()
-          tag="rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:${{ needs.compute-matrix.outputs.TAG_PREFIX }}cuda${{ matrix.CUDA_VER }}-base-${{ matrix.LINUX_VER }}-py${{ matrix.PYTHON_VER }}"
-          for arch in $(echo '${{ toJSON(matrix.ARCHES) }}' | jq .[] -r); do
-            source_tags+=("${tag}-${arch}")
-          done
-
-          docker manifest create ${tag} ${source_tags[@]}
-          docker manifest push ${tag}
-          if [[
-            "${LATEST_UBUNTU_VER}" == "${{ matrix.LINUX_VER }}" &&
-            "${LATEST_CUDA_VER}" == "${{ matrix.CUDA_VER }}" &&
-            "${LATEST_PYTHON_VER}" == "${{ matrix.PYTHON_VER }}"
-          ]]; then
-            docker manifest create rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:latest ${source_tags[@]}
-            docker manifest push rapidsai/${{ needs.compute-matrix.outputs.IMAGE_REPO }}:latest
-          fi
-  delete-imgs:
+  delete-temp-images:
     needs: [compute-matrix, build-multiarch-manifest]
-    if: inputs.build_type == 'branch'
+    runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
       fail-fast: false
-    uses: ./.github/workflows/delete-temp-images.yml
-    with:
-      ARCHES: ${{ toJSON(matrix.ARCHES) }}
-      CUDA_VER: ${{ matrix.CUDA_VER }}
-      IMAGE_REPO: ${{ needs.compute-matrix.outputs.IMAGE_REPO }}
-      LINUX_VER: ${{ matrix.LINUX_VER }}
-      PYTHON_VER: ${{ matrix.PYTHON_VER }}
-      TAG_PREFIX: ${{ needs.compute-matrix.outputs.TAG_PREFIX }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Remove temporary images
+        run: ci/remove-temp-images.sh
+        env:
+          GPUCIBOT_DOCKERHUB_USER: ${{ secrets.GPUCIBOT_DOCKERHUB_USER }}
+          GPUCIBOT_DOCKERHUB_TOKEN: ${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}
+          IMAGE_NAME: ${{ matrix.IMAGE_NAME }}
+          ARCHES: ${{ toJSON(matrix.ARCHES) }}

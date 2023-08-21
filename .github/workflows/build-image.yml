@@ -15,12 +15,19 @@ on:
       PYTHON_VER:
         required: true
         type: string
-      TAG:
+      IMAGE_REPO:
+        required: true
+        type: string
+      IMAGE_NAME:
+        required: true
+        type: string
+      MANYLINUX_VER:
         required: true
         type: string
 
 jobs:
-  docker-build:
+  run:
+    name: build (${{ matrix.CUDA_VER }}, ${{ matrix.PYTHON_VER }}, ${{ matrix.LINUX_VER }}, ${{ matrix.ARCH }})
     strategy:
       matrix:
         ARCH: ${{ fromJSON(inputs.ARCHES) }}
@@ -28,7 +35,7 @@ jobs:
         LINUX_VER: ["${{ inputs.LINUX_VER }}"]
         PYTHON_VER: ["${{ inputs.PYTHON_VER }}"]
       fail-fast: false
-    runs-on: "linux-${{ matrix.ARCH }}-cpu4"
+    runs-on: linux-${{ matrix.ARCH }}-cpu4
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -38,7 +45,6 @@ jobs:
           username: ${{ secrets.GPUCIBOT_DOCKERHUB_USER }}
           password: ${{ secrets.GPUCIBOT_DOCKERHUB_TOKEN }}
       - name: Set up Docker Context for Buildx
-        id: buildx-context
         run: |
           docker context create builders
       - name: Set up Docker Buildx
@@ -50,10 +56,11 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
+          file: Dockerfile
           push: true
           pull: true
           build-args: |
             CUDA_VER=${{ inputs.CUDA_VER }}
             LINUX_VER=${{ inputs.LINUX_VER }}
             PYTHON_VER=${{ inputs.PYTHON_VER }}
-          tags: ${{ inputs.TAG }}-${{ matrix.ARCH }}
+          tags: ${{ inputs.IMAGE_NAME }}-${{ matrix.ARCH }}
