@@ -13,7 +13,7 @@ RUN groupadd conda; \
   usermod -g conda root
 
 # Ownership & permissions based on https://docs.anaconda.com/anaconda/install/multi-user/#multi-user-anaconda-installation-on-linux
-COPY --from=condaforge/mambaforge:23.1.0-1 --chown=root:conda --chmod=770 /opt/conda /opt/conda
+COPY --from=condaforge/mambaforge:23.1.0-4 --chown=root:conda --chmod=770 /opt/conda /opt/conda
 
 # Ensure new files are created with group write access & setgid. See https://unix.stackexchange.com/a/12845
 RUN chmod g+ws /opt/conda
