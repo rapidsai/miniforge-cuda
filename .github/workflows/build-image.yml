@@ -21,9 +21,6 @@ on:
       IMAGE_NAME:
         required: true
         type: string
-      MANYLINUX_VER:
-        required: true
-        type: string
 
 jobs:
   run:
