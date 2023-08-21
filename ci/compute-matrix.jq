@@ -35,7 +35,7 @@ def compute_tag_prefix($x):
 def compute_image_name($x):
   compute_repo($x) as $repo |
   compute_tag_prefix($x) as $tag_prefix |
-  "rapidsai/" + $repo + ":" + $tag_prefix + "cuda" + $x.CUDA_VER + "-" + $x.LINUX_VER + "-" + "py" + $x.PYTHON_VER |
+  "rapidsai/" + $repo + ":" + $tag_prefix + "cuda" + $x.CUDA_VER + "-base-" + $x.LINUX_VER + "-" + "py" + $x.PYTHON_VER |
   $x + {IMAGE_NAME: .};
 
 # Checks the current entry to see if it matches any of the excludes.

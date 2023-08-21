@@ -27,7 +27,6 @@ jobs:
         env:
           BUILD_TYPE: ${{ inputs.BUILD_TYPE }}
   docker:
-    name: docker
     needs: compute-matrix
     strategy:
       matrix: ${{ fromJSON(needs.compute-matrix.outputs.MATRIX) }}
