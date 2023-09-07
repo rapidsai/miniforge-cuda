@@ -18,3 +18,12 @@ jobs:
     with:
       build_type: branch
     secrets: inherit
+  trigger-pipeline:
+    runs-on: ubuntu-latest
+    needs: build-images
+    steps:
+      - name: Trigger Pipeline
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          gh workflow run build-and-publish-images.yml -R github.com/rapidsai/ci-imgs -r main --json '{"build_type":"branch"}'
