@@ -22,7 +22,7 @@ RUN \
   # Ensure new files/dirs have group write/setgid permissions
   umask g+ws; \
   # install expected Python version
-  mamba install -y -n base python="${PYTHON_VERSION}"; \
+  mamba install -y -n base "python=${PYTHON_VERSION}=*_cpython"; \
   mamba update --all -y -n base; \
   find /opt/conda -follow -type f -name '*.a' -delete; \
   find /opt/conda -follow -type f -name '*.pyc' -delete; \
