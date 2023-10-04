@@ -14,7 +14,7 @@ LINUX_VER:
   - "centos7"
   - "rockylinux8"
 IMAGE_REPO:
-  - "mambaforge-cuda"
+  - "miniforge-cuda"
 exclude:
   - LINUX_VER: "ubuntu22.04"
     CUDA_VER: "11.2.2"
