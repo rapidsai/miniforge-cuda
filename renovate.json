@@ -6,7 +6,7 @@
   "packageRules": [
     {
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["condaforge/mambaforge"],
+      "matchPackageNames": ["condaforge/miniforge3"],
       "versioning": "loose"
     }
   ]
