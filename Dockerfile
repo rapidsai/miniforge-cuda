@@ -8,6 +8,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
 
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
+
 # Create a conda group and assign it as root's primary group
 RUN <<EOF
 groupadd conda
