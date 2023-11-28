@@ -43,24 +43,23 @@ echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> /etc/skel/.ba
 echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> ~/.bashrc
 EOF
 
+# tzdata is needed by the ORC library used by pyarrow, because it provides /etc/localtime
+# libnuma1, libnuma-dev is needed by dask/ucx
+# numactl-devel, numactl-libs is needed by dask/ucx
+# TODO: remove these packages once they're available on conda
 RUN <<EOF
 case "${LINUX_VER}" in
   "ubuntu"*) 
     apt-get update
     apt-get upgrade -y
     apt-get install -y --no-install-recommends \
-      # needed by the ORC library used by pyarrow, because it provides /etc/localtime
       tzdata \
-      # needed by dask/ucx
-      # TODO: remove these packages once they're available on conda
       libnuma1 libnuma-dev
     rm -rf "/var/lib/apt/lists/*"
     ;;
   "centos"* | "rockylinux"*) 
     yum -y update
     yum -y install --setopt=install_weak_deps=False \
-      # needed by dask/ucx
-      # TODO: remove these packages once they're available on conda
       numactl-devel numactl-libs
     yum clean all
     ;;
