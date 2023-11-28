@@ -28,6 +28,10 @@ umask 002
 # install expected Python version
 mamba install -y -n base python="${PYTHON_VERSION}"
 mamba update --all -y -n base
+if [[ "$LINUX_VER" == "rockylinux"* ]]; then
+  yum update -y
+  yum install -y findutils
+fi
 find /opt/conda -follow -type f -name '*.a' -delete
 find /opt/conda -follow -type f -name '*.pyc' -delete
 conda clean -afy
@@ -57,8 +61,8 @@ case "${LINUX_VER}" in
       libnuma1 libnuma-dev
     rm -rf "/var/lib/apt/lists/*"
     ;;
-  "centos"* | "rockylinux"*) 
-    yum -y update
+  "centos"* | "rockylinux"*)
+    yum update -y
     yum -y install --setopt=install_weak_deps=False \
       numactl-devel numactl-libs
     yum clean all
