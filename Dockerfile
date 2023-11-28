@@ -23,8 +23,8 @@ COPY --from=condaforge/miniforge3:23.3.1-1 --chown=root:conda --chmod=770 /opt/c
 RUN chmod g+ws /opt/conda
 
 RUN <<EOF
-# Ensure new files/dirs have group write/setgid permissions
-umask g+ws
+# Ensure new files/dirs have group write permissions
+umask 002
 # install expected Python version
 mamba install -y -n base python="${PYTHON_VERSION}"
 mamba update --all -y -n base
