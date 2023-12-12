@@ -1,7 +1,6 @@
 def compute_arch($x):
   ["amd64"] |
   if
-    $x.CUDA_VER > "11.2.2" and
     $x.LINUX_VER != "centos7"
   then
     . + ["arm64"]
