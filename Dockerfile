@@ -44,20 +44,6 @@ RUN case "${LINUX_VER}" in \
       && apt-get install -y --no-install-recommends \
         # needed by the ORC library used by pyarrow, because it provides /etc/localtime
         tzdata \
-        # needed by dask/ucx
-        # TODO: remove these packages once they're available on conda
-        libnuma1 libnuma-dev \
       && rm -rf "/var/lib/apt/lists/*"; \
-      ;; \
-    "centos"* | "rockylinux"*) \
-      yum -y update \
-      && yum -y install --setopt=install_weak_deps=False \
-        # needed by dask/ucx
-        # TODO: remove these packages once they're available on conda
-        numactl-devel numactl-libs \
-      && yum clean all; \
-      ;; \
-    *) \
-      echo "Unsupported LINUX_VER: ${LINUX_VER}" && exit 1; \
       ;; \
   esac
