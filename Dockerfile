@@ -25,9 +25,6 @@ RUN chmod g+ws /opt/conda
 RUN <<EOF
 # Ensure new files/dirs have group write permissions
 umask 002
-# miniforge3 ships with Python 3.10, truststore requires Python>=3.10, this makes installing an older Python impossible
-# Removing truststore will allow for Python <3.10 to be installed, and Python >=3.10 will just reinstall it
-conda remove --force truststore
 # install expected Python version
 mamba install -y -n base python="${PYTHON_VERSION}"
 mamba update --all -y -n base
