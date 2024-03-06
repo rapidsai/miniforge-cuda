@@ -1,9 +1,9 @@
-ARG CUDA_VER=11.8.0
-ARG LINUX_VER=ubuntu22.04
+ARG CUDA_VER=notset
+ARG LINUX_VER=notset
 FROM nvidia/cuda:${CUDA_VER}-base-${LINUX_VER}
 
 ARG LINUX_VER
-ARG PYTHON_VER=3.10
+ARG PYTHON_VER
 ARG DEBIAN_FRONTEND=noninteractive
 ENV PATH=/opt/conda/bin:$PATH
 ENV PYTHON_VERSION=${PYTHON_VER}
@@ -17,7 +17,7 @@ usermod -g conda root
 EOF
 
 # Ownership & permissions based on https://docs.anaconda.com/anaconda/install/multi-user/#multi-user-anaconda-installation-on-linux
-COPY --from=condaforge/miniforge3:23.3.1-1 --chown=root:conda --chmod=770 /opt/conda /opt/conda
+COPY --from=condaforge/miniforge3:23.11.0-0 --chown=root:conda --chmod=770 /opt/conda /opt/conda
 
 # Ensure new files are created with group write access & setgid. See https://unix.stackexchange.com/a/12845
 RUN chmod g+ws /opt/conda
@@ -29,8 +29,8 @@ umask 002
 mamba install -y -n base python="${PYTHON_VERSION}"
 mamba update --all -y -n base
 if [[ "$LINUX_VER" == "rockylinux"* ]]; then
-  yum update -y
   yum install -y findutils
+  yum clean all
 fi
 find /opt/conda -follow -type f -name '*.a' -delete
 find /opt/conda -follow -type f -name '*.pyc' -delete
@@ -48,28 +48,21 @@ echo ". /opt/conda/etc/profile.d/conda.sh; conda activate base" >> ~/.bashrc
 EOF
 
 # tzdata is needed by the ORC library used by pyarrow, because it provides /etc/localtime
-# libnuma1, libnuma-dev is needed by dask/ucx
-# numactl-devel, numactl-libs is needed by dask/ucx
-# TODO: remove these packages once they're available on conda
 RUN <<EOF
 case "${LINUX_VER}" in
-  "ubuntu"*) 
+  "ubuntu"*)
     apt-get update
     apt-get upgrade -y
     apt-get install -y --no-install-recommends \
-      tzdata \
-      libnuma1 libnuma-dev
+      tzdata
     rm -rf "/var/lib/apt/lists/*"
     ;;
   "centos"* | "rockylinux"*)
     yum update -y
-    yum -y install --setopt=install_weak_deps=False \
-      numactl-devel numactl-libs
     yum clean all
     ;;
-  *) 
+  *)
     echo "Unsupported LINUX_VER: ${LINUX_VER}" && exit 1
     ;;
 esac
 EOF
-
