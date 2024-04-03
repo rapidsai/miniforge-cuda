@@ -28,9 +28,6 @@ umask 002
 # install expected Python version
 mamba install -y -n base python="${PYTHON_VERSION}"
 mamba update --all -y -n base
-# TODO: remove pin after `conda env create --force` usage is removed across
-# RAPIDS
-mamba install -y "conda<24.3"
 if [[ "$LINUX_VER" == "rockylinux"* ]]; then
   yum install -y findutils
   yum clean all
