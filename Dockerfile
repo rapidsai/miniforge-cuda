@@ -26,8 +26,8 @@ RUN <<EOF
 # Ensure new files/dirs have group write permissions
 umask 002
 # install expected Python version
-mamba install -y -n base python="${PYTHON_VERSION}"
-mamba update --all -y -n base
+conda install -y -n base python="${PYTHON_VERSION}"
+conda update --all -y -n base
 if [[ "$LINUX_VER" == "rockylinux"* ]]; then
   yum install -y findutils
   yum clean all
