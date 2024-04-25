@@ -1,24 +1,20 @@
 CUDA_VER:
-  - "11.2.2"
   - "11.4.3"
-  - "11.5.2"
   - "11.8.0"
   - "12.0.1"
-  - "12.1.1"
+  - "12.2.2"
 PYTHON_VER:
   - "3.9"
   - "3.10"
+  - "3.11"
+  - "3.12"
 LINUX_VER:
   - "ubuntu20.04"
   - "ubuntu22.04"
   - "centos7"
   - "rockylinux8"
 IMAGE_REPO:
-  - "mambaforge-cuda"
+  - "miniforge-cuda"
 exclude:
   - LINUX_VER: "ubuntu22.04"
-    CUDA_VER: "11.2.2"
-  - LINUX_VER: "ubuntu22.04"
     CUDA_VER: "11.4.3"
-  - LINUX_VER: "ubuntu22.04"
-    CUDA_VER: "11.5.2"

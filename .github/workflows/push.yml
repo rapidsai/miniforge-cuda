@@ -26,8 +26,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
-          gh workflow run push.yml \
+          gh workflow run push.yaml \
           --field upstream_job="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
-          --field upstream_repository=mambaforge-cuda \
+          --field upstream_repository=miniforge-cuda \
           --repo rapidsai/ci-imgs \
           --ref main
