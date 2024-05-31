@@ -1,6 +1,5 @@
 def compute_arch($x):
-  ["amd64", "arm64"] |
-  $x + {ARCHES: .};
+  $x + {ARCHES: ["amd64", "arm64"]};
 
 # Checks the current entry to see if it matches the given exclude
 def matches($entry; $exclude):
