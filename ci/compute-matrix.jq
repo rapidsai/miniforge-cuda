@@ -1,12 +1,5 @@
 def compute_arch($x):
-  ["amd64"] |
-  if
-    $x.LINUX_VER != "centos7"
-  then
-    . + ["arm64"]
-  else
-    .
-  end |
+  ["amd64", "arm64"] |
   $x + {ARCHES: .};
 
 # Checks the current entry to see if it matches the given exclude

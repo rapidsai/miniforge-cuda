@@ -57,7 +57,7 @@ case "${LINUX_VER}" in
       tzdata
     rm -rf "/var/lib/apt/lists/*"
     ;;
-  "centos"* | "rockylinux"*)
+  "rockylinux"*)
     yum update -y
     yum clean all
     ;;
