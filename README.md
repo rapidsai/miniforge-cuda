@@ -2,6 +2,8 @@
 
 > [!IMPORTANT]
 > `miniforge-cuda` images are now generated in https://github.com/rapidsai/ci-imgs. Please direct issues and pull requests to that repository.
+>
+> See https://github.com/rapidsai/build-planning/issues/48 for more information.
 
 A simple set of images that install [Miniforge](https://github.com/conda-forge/miniforge) on top of the [nvidia/cuda](https://hub.docker.com/r/nvidia/cuda) images.
 
